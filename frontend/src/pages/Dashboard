@@ -1,0 +1,92 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { api, percent } from '../api.js'
+
+export default function Dashboard() {
+  const [data, setData] = useState(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    api('/dashboard').then(setData).catch((e) => setError(e.message))
+  }, [])
+
+  if (error) return <div className="error">{error}</div>
+  if (!data) return <p className="muted">Loading...</p>
+
+  if (data.total === 0) {
+    return (
+      <>
+        <div className="head"><h1>Overview</h1></div>
+        <div className="panel">
+          <p>Nothing to show yet. Upload a bank statement, or load the demo data to see how matching works.</p>
+          <Link className="btn-link" to="/statements"><button>Go to bank statements</button></Link>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <div className="head">
+        <h1>Overview</h1>
+        <p className="muted">Across every statement uploaded so far.</p>
+      </div>
+
+      <div className="panel">
+        <div className="figures">
+          <div className="figure">
+            <div className="value">{percent(data.matchRate)}</div>
+            <div className="label">of bank lines matched</div>
+          </div>
+          <div className="figure">
+            <div className="value">{data.matched}</div>
+            <div className="label">matched</div>
+          </div>
+          <div className="figure">
+            <div className="value">{data.unmatched}</div>
+            <div className="label">waiting in exceptions</div>
+          </div>
+          <div className="figure">
+            <div className="value">{data.ledgerEntries}</div>
+            <div className="label">ledger entries</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="panel">
+        <h2>How lines were matched</h2>
+        <div style={{ height: 200 }}>
+          <ResponsiveContainer>
+            <BarChart data={data.byMethod}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="method" fontSize={12} />
+              <YAxis allowDecimals={false} fontSize={12} width={32} />
+              <Tooltip />
+              <Bar dataKey="count" name="Lines" fill="#3547a8" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="panel">
+        <h2>Things that need a look</h2>
+        {data.anomalies.length === 0 ? (
+          <p className="muted">No flags.</p>
+        ) : (
+          <table>
+            <tbody>
+              {data.anomalies.map((a) => (
+                <tr key={a.kind}>
+                  <td><span className={'tag ' + a.kind}>{a.kind.replace('_', ' ').toLowerCase()}</span></td>
+                  <td className="num">{a.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <p style={{ marginTop: 12 }}><Link to="/exceptions">Open the exceptions queue</Link></p>
+      </div>
+    </>
+  )
+}
