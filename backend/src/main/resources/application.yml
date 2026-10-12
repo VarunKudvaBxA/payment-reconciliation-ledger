@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/recon}
+    username: ${DB_USER:recon}
+    password: ${DB_PASSWORD:recon}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  flyway:
+    enabled: true
+
+recon:
+  fuzzy-threshold: 0.80
+  semantic-threshold: 0.40
+  missing-settlement-days: 3
+  llm:
+    url: https://api.anthropic.com/v1/messages
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${LLM_MODEL:claude-haiku-5-5}
+  embedding:
+    mode: ${EMBEDDING_MODE:local}
+    api-url: https://api.openai.com/v1/embeddings
+    api-key: ${EMBEDDING_API_KEY:}
+    model: text-embedding-3-small
